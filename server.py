@@ -10,6 +10,7 @@ app.secret_key = 'SECRETSECRETSECRET'
 
 
 API_KEY = os.environ['TICKETMASTER_KEY']
+BASE_URL = 'https://app.ticketmaster.com/discovery/v2/events'
 
 
 @app.route('/')
@@ -30,14 +31,18 @@ def show_afterparty_form():
 def find_afterparties():
     """Search for afterparties on Eventbrite"""
 
-    keyword = request.args.get('keyword', '')
-    postalcode = request.args.get('zipcode', '')
-    radius = request.args.get('radius', '')
-    unit = request.args.get('unit', '')
-    sort = request.args.get('sort', '')
+    keyword = request.args.get('keyword', request.args.get('keyword'))
+    postalcode = request.args.get('zipcode', request.args.get('zipcode'))
+    radius = request.args.get('radius', request.args.get('radius'))
+    unit = request.args.get('unit', request.args.get('unit'))
+    sort = request.args.get('sort', request.args.get('sort'))
 
-    url = 'https://app.ticketmaster.com/discovery/v2/events'
-    payload = {'apikey': API_KEY}
+    payload = {'apikey': API_KEY,
+               'keyword': keyword,
+               'postalCode': postalcode,
+               'radius': radius,
+               'unit': unit,
+               'sort': sort}
 
     # TODO: Make a request to the Event Search endpoint to search for events
     #
@@ -49,10 +54,10 @@ def find_afterparties():
     #
     # - Replace the empty list in `events` with the list of events from your
     #   search results
+    res = requests.get(BASE_URL, params=payload)
 
-    data = {'Test': ['This is just some test data'],
-            'page': {'totalElements': 1}}
-    events = []
+    data = res.json()
+    events = data['_embedded']['events']
 
     return render_template('search-results.html',
                            pformat=pformat,
@@ -70,8 +75,12 @@ def get_event_details(id):
     """View the details of an event."""
 
     # TODO: Finish implementing this view function
+    url = f"{BASE_URL}/{id}"
+    payload = {'apikey': API_KEY}
+    res = requests.get(url, params=payload)
+    data = res.json()
 
-    return render_template('event-details.html')
+    return render_template('event-details.html', event=data)
 
 
 if __name__ == '__main__':
